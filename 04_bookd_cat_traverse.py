@@ -2,21 +2,30 @@
 
 import csv
 
+from typing import Collection
+
 import scrapy
 
-from urllib.parse import urljoin
 
+ROOT_CATEGORIES_FILE_NAME    = "03_bookd_cat_root_all.csv"
+ROOT_CATEGORIES_IDS_EXCLUDED = {
+  "3389/Audio-Books",
+  "2455/Childrens-Books",
+  "2633/Graphic-Novels-Anime-Manga",
+}
 
-DOWNLOAD_DELAY = 1
+SITE_ROOT_URL           = "https://www.bookdepository.com"
 
-AUTOTHROTTLE_ENABLED = True
-AUTOTHROTTLE_START_DELAY = 1
-AUTOTHROTTLE_MAX_DELAY = 3
+CATEGORY_ROOT_PATH      = "/category/"
+CATEGORY_ROOT_PATH_LEN  = len(CATEGORY_ROOT_PATH)
 
+CATEGORY_URL_PREFIX     = f"{SITE_ROOT_URL}{CATEGORY_ROOT_PATH}"
+CATEGORY_URL_PREFIX_LEN = len(CATEGORY_URL_PREFIX)
 
-BASE_URL = "https://www.bookdepository.com/category/"
-ROOT_CATEGORIES_FILE_PATH = "03_bookd_cat_root.csv"
+CATEGORY_URL_SUFFIX     = "/browse/viewmode/all"
+CATEGORY_URL_SUFFIX_LEN = len(CATEGORY_URL_SUFFIX)
 
+CATEGORY_URL_TEMPLATE   = f"{CATEGORY_URL_PREFIX}{{category_id}}{CATEGORY_URL_SUFFIX}"
 
 TITLE_XPATH    = "//span[contains(@class, 'current-page')][1]/text()"
 COUNT_XPATH    = "//span[@class='search-count'][1]/text()"
@@ -28,16 +37,16 @@ CHILDREN_XPATH = "/".join([
 ])
 
 
-def make_start_urls(base_url, root_categories_file_path):
-  with open(root_categories_file_path, newline='') as f:
-    return [
-      urljoin(base_url, c['subpath'])
-      for c in csv.DictReader(f)
-    ]
+def format_url(category_id: str) -> str:
+  return CATEGORY_URL_TEMPLATE.format(category_id = category_id)
 
 
-def extract_subpath(url):
-   return url.rstrip("/").rsplit("/category/")[1]
+def parse_cid(url: str) -> str:
+  return url[CATEGORY_URL_PREFIX_LEN:-CATEGORY_URL_SUFFIX_LEN]
+
+
+def parse_child_cid(path: str) -> str:
+  return path[CATEGORY_ROOT_PATH_LEN:]
 
 
 def parse_title(selector) -> str:
@@ -50,37 +59,57 @@ def parse_count_maybe(selector) -> int | None:
     return int(value.replace(",", ""))
 
 
-def extract_children(selector) -> list[str]:
+def parse_children_ids(selector) -> list[str]:
   items = selector.xpath(CHILDREN_XPATH).getall()
   return [
-    extract_subpath(x) for x in items
+    parse_child_cid(x) for x in items
   ]
 
 
+def load_root_ids(file_path: str, excluded_ids: Collection) -> list[str]:
+  with open(file_path, newline='') as f:
+    result = [
+      c['cid']
+      for c in csv.DictReader(f)
+      if c['cid'] not in excluded_ids
+    ]
+
+  return list(sorted(result))
+
+
+def make_start_urls(category_ids: list[str]) -> list[str]:
+  return [format_url(cid) for cid in category_ids]
+
+
 class BookDepositoryCategoriesSpider(scrapy.Spider):
-  name       = "bookd_cat"
-  start_urls = make_start_urls(BASE_URL, ROOT_CATEGORIES_FILE_PATH)
+  name       = "bookd_categories"
+  start_urls = make_start_urls(
+    category_ids = load_root_ids(
+      file_path    = ROOT_CATEGORIES_FILE_NAME,
+      excluded_ids = ROOT_CATEGORIES_IDS_EXCLUDED,
+    ),
+  )
 
   def parse(self, response):
+    cid      = parse_cid(response.url)
     title    = parse_title(response.selector)
-    subpath  = extract_subpath(response.url)
     count    = parse_count_maybe(response.selector)
-    children = extract_children(response.selector)
+    children = parse_children_ids(response.selector)
 
     yield dict(
       title    = title,
-      subpath  = subpath,
+      cid      = cid,
       count    = count,
       children = children or None,
     )
 
-    for child in children:
-      next_page = urljoin(BASE_URL, child)
+    for child_id in children:
+      next_page = format_url(child_id)
       yield scrapy.Request(next_page, callback=self.parse)
 
 
 def main():
-  ...
+  print(BookDepositoryCategoriesSpider.start_urls)
 
 
 if __name__ == "__main__":

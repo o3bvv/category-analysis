@@ -10,12 +10,11 @@ from typing import Any
 from typing import Collection
 
 
-I_ROOT_IDS_FILE_NAME = "03_bookd_cat_root.csv"
-I_ROOT_IDS_EXCLUDE   = {
+I_ROOT_IDS_FILE_NAME = "03_bookd_cat_root_all.csv"
+I_ROOT_IDS_EXCLUDED  = {
   "3389/Audio-Books",
   "2455/Childrens-Books",
   "2633/Graphic-Novels-Anime-Manga",
-  "",
 }
 
 I_CATALOG_FILE_NAME  = "06_bookd_cat_flat.jl"
@@ -40,7 +39,7 @@ def build_tree(node_id: str, catalog: dict) -> TreeNode:
   if children:
     children = [
       build_tree(child_id, catalog)
-      for child_id in children
+      for child_id in list(sorted(children))
     ]
     children = list(filter(bool, children))
 
@@ -70,11 +69,13 @@ def transform_catalog(catalog: dict, root_ids: list[str]) -> list[TreeNode]:
 
 def load_root_ids(file_path: str, excluded_ids: Collection) -> list[str]:
   with open(file_path, newline='') as f:
-    return [
-      c['subpath']
+    result = [
+      c['cid']
       for c in csv.DictReader(f)
-      if c['subpath'] not in excluded_ids
+      if c['cid'] not in excluded_ids
     ]
+
+  return list(sorted(result))
 
 
 def load_catalog(file_path: str) -> dict[dict]:
@@ -83,7 +84,7 @@ def load_catalog(file_path: str) -> dict[dict]:
   with open(file_path) as f:
     for s in f:
       item = json.loads(s)
-      result[item['subpath']] = item
+      result[item['cid']] = item
 
   return result
 
@@ -99,7 +100,7 @@ def save_catalog(catalog: list[TreeNode], file_path: str, indent: int | None) ->
 
 
 def main() -> None:
-  root_ids = load_root_ids(I_ROOT_IDS_FILE_NAME, I_ROOT_IDS_EXCLUDE)
+  root_ids = load_root_ids(I_ROOT_IDS_FILE_NAME, I_ROOT_IDS_EXCLUDED)
   catalog  = load_catalog(I_CATALOG_FILE_NAME)
   catalog  = transform_catalog(catalog, root_ids)
   save_catalog(catalog, O_CATALOG_FILE_NAME, O_CATALOG_INDENT)

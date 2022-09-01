@@ -7,9 +7,17 @@ import dataclasses
 import json
 
 from typing import Any
+from typing import Collection
 
 
 I_ROOT_IDS_FILE_NAME = "03_bookd_cat_root.csv"
+I_ROOT_IDS_EXCLUDE   = {
+  "3389/Audio-Books",
+  "2455/Childrens-Books",
+  "2633/Graphic-Novels-Anime-Manga",
+  "",
+}
+
 I_CATALOG_FILE_NAME  = "06_bookd_cat_flat.jl"
 
 O_CATALOG_FILE_NAME  = "08_bookd_cat_tree.json"
@@ -60,11 +68,12 @@ def transform_catalog(catalog: dict, root_ids: list[str]) -> list[TreeNode]:
   return list(filter(bool, trees))
 
 
-def load_root_ids(file_path: str) -> list[str]:
+def load_root_ids(file_path: str, excluded_ids: Collection) -> list[str]:
   with open(file_path, newline='') as f:
     return [
       c['subpath']
       for c in csv.DictReader(f)
+      if c['subpath'] not in excluded_ids
     ]
 
 
@@ -90,7 +99,7 @@ def save_catalog(catalog: list[TreeNode], file_path: str, indent: int | None) ->
 
 
 def main() -> None:
-  root_ids = load_root_ids(I_ROOT_IDS_FILE_NAME)
+  root_ids = load_root_ids(I_ROOT_IDS_FILE_NAME, I_ROOT_IDS_EXCLUDE)
   catalog  = load_catalog(I_CATALOG_FILE_NAME)
   catalog  = transform_catalog(catalog, root_ids)
   save_catalog(catalog, O_CATALOG_FILE_NAME, O_CATALOG_INDENT)

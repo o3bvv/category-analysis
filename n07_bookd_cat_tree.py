@@ -17,7 +17,7 @@ I_ROOT_IDS_EXCLUDED  = {
   "2633/Graphic-Novels-Anime-Manga",
 }
 
-I_CATALOG_FILE_NAME  = "n06_bookd_cat_flat.jl"
+I_CATALOG_FILE_NAME  = "n06_bookd_cat_flat.jsonl"
 
 O_CATALOG_FILE_NAME  = "n08_bookd_cat_tree.json"
 O_CATALOG_INDENT     = 2

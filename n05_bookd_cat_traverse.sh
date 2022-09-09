@@ -3,7 +3,7 @@
 set -e
 
 SPIDER_FILE_NAME="n04_bookd_cat_traverse.py"
-O_FILE_NAME="n06_bookd_cat_flat.jl"
+O_FILE_NAME="n06_bookd_cat_flat.jsonl"
 
 scrapy runspider \
   -s DOWNLOAD_DELAY=0.25 \

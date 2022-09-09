@@ -10,16 +10,16 @@ from typing import Any
 from typing import Collection
 
 
-I_ROOT_IDS_FILE_NAME = "03_bookd_cat_root_all.csv"
+I_ROOT_IDS_FILE_NAME = "n03_bookd_cat_root_all.csv"
 I_ROOT_IDS_EXCLUDED  = {
   "3389/Audio-Books",
   "2455/Childrens-Books",
   "2633/Graphic-Novels-Anime-Manga",
 }
 
-I_CATALOG_FILE_NAME  = "06_bookd_cat_flat.jl"
+I_CATALOG_FILE_NAME  = "n06_bookd_cat_flat.jl"
 
-O_CATALOG_FILE_NAME  = "08_bookd_cat_tree.json"
+O_CATALOG_FILE_NAME  = "n08_bookd_cat_tree.json"
 O_CATALOG_INDENT     = 2
 
 

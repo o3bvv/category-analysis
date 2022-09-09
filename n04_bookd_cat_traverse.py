@@ -7,7 +7,7 @@ from typing import Collection
 import scrapy
 
 
-ROOT_CATEGORIES_FILE_NAME    = "03_bookd_cat_root_all.csv"
+ROOT_CATEGORIES_FILE_NAME    = "n03_bookd_cat_root_all.csv"
 ROOT_CATEGORIES_IDS_EXCLUDED = {
   "3389/Audio-Books",
   "2455/Childrens-Books",
